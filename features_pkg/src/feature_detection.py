@@ -77,9 +77,9 @@ class features():
         edges_center = edges.T[(int(len(edges.T)/2))]
 
         if 255 in edges_center:
-            return 'uses glasses'
+            return 'wears glasses'
         else:
-            return 'no glasses'
+            return 'does not wear glasses'
 
 
     def fix_channels(self,t):
@@ -111,13 +111,7 @@ class features():
 
 
     def plot_results(self,pil_img, prob, boxes):
-        way = glob.glob(directory+'results/*')
-        for py_file in way:
-            try:
-                os.remove(py_file)
-            except OSError as e:
-                rospy.logerr(f"Error:{ e.strerror}")
-        detec = []
+
         color = COLORS * 100
         for p, (xmin, ymin, xmax, ymax), c in zip(prob, boxes.tolist(), color):
             cl = p.argmax()
@@ -126,7 +120,6 @@ class features():
                     xmin=(xmax+xmin)/2
                 img = pil_img.crop((xmin+10,ymin+10,xmax-10,ymax-10))
                 img.save(directory+'results/'+self.idx_to_text(cl)+'.png')
-                detec.append([self.idx_to_text(cl),[int(xmin),int(ymax),int(xmax),int(ymin)]])
 
 
     def visualize_predictions(self,image, outputs, threshold=0.8):
@@ -134,7 +127,12 @@ class features():
         keep = probas.max(-1).values > threshold
 
         bboxes_scaled = self.rescale_bboxes(outputs.pred_boxes[0, keep].cpu(), image.size)
-
+        way = glob.glob(directory+'results/*')
+        for py_file in way:
+            try:
+                os.remove(py_file)
+            except OSError as e:
+                rospy.logerr(f"Error:{ e.strerror}")
         self.plot_results(image, probas[keep], bboxes_scaled)
         
 
@@ -198,9 +196,14 @@ class features():
         and directory+'results/hair accessory.png' not in glob.glob(directory+'results/*'):
             out = 'This guest has no head accessory and '
         else: 
-            out = 'This guest wears'
+            out = 'This guest '
 
-        out = out +self.ifglasses(directory+"base/img.png")+'. They are wearing:'
+        out = out +self.ifglasses(directory+"base/img.png")+'.'
+
+        if directory+'results/watch.png' not in glob.glob(directory+'results/*')
+            out = out + 'This guest its not using any visible watches.'
+
+        out = out + 'They are wearing:'
 
         for clothes in glob.glob(directory+'results/*'):
             color = self.colorName(clothes)
@@ -213,8 +216,6 @@ class features():
         self.recog = 0
         rospy.loginfo("Service called!")
         rospy.loginfo("Requested..")
-
-        time.sleep(3)
         
         while self.recog == 0:
             self.img_sub = rospy.Subscriber(self.topic,Im,self.camera_callback)
