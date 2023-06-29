@@ -1,0 +1,3 @@
+<launch>
+  <node name="feature_detection" pkg="feature_pkg" type="feature_detection.py" output="screen"/>
+</launch>
