@@ -84,9 +84,9 @@ class FeatureExtractor:
         edges_center = edges.T[(int(len(edges.T) / 2))]
 
         if 255 in edges_center:
-            return 'wears glasses'
+            return True
         else:
-            return 'does not wear glasses'
+            return False
 
     def fix_channels(self, t):
         if len(t.shape) == 2:
@@ -123,7 +123,7 @@ class FeatureExtractor:
                 img = pil_img.crop((xmin + 10, ymin + 10, xmax - 10, ymax - 10))
                 img.save(self.directory + 'results/' + self.idx_to_text(cl) + '.png')
 
-    def visualize_predictions(self, image, outputs, threshold=0.8):
+    def visualize_predictions(self, image, outputs, threshold=0.85):
         probas = outputs.logits.softmax(-1)[0, :, :-1]
         keep = probas.max(-1).values > threshold
 
@@ -197,17 +197,28 @@ class FeatureExtractor:
         else:
             out = 'This guest '
 
-        out = out + self.ifglasses(self.directory + "base/img.png") + '.'
+        if self.directory + 'results/glasses.png' not in glob.glob(self.directory+'results/*'):
+            if self.ifglasses(path)==False:
+                out = out + 'does not wear glasses.'
+            else:
+                out = out + 'wears glasses.'
+        else:
+            out = out + 'wears glasses.'
 
-        if self.directory + 'results/watch.png' not in glob.glob(self.directory + 'results/*')
+
+        if self.directory + 'results/watch.png' not in glob.glob(self.directory + 'results/*'):
             out = out + 'This guest its not using any visible watches.'
 
         out = out + 'They are wearing:'
 
         for clothes in glob.glob(self.directory + 'results/*'):
-            color = self.colorName(clothes)
             name = clothes.split('results/')[1].split('.')[0]
-            out = out + str(color + ' ' + name + '.')
+            if name != 'glasses':
+                color = self.colorName(clothes)
+                if 'darkslategray' in color:
+                    color = 'jeans'
+                
+                out = out + str(color + ' ' + name + '.')
         return out
 
     def handler(self, request):
@@ -215,12 +226,11 @@ class FeatureExtractor:
         rospy.loginfo("Service called!")
         rospy.loginfo("Requested..")
 
-        time.sleep(3)
-
         while self.recog == 0:
             self.img_sub = rospy.Subscriber(self.topic, Im, self.camera_callback)
             output = self.main()
             self.rate.sleep()
+            rospy.loginfo(output)
             return output
         cv2.destroyAllWindows()
 
