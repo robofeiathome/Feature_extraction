@@ -49,7 +49,7 @@ class FeaturesRecognition:
     def features(self):
         frame = self.bridge.imgmsg_to_cv2(self.cam_image,desired_encoding='bgr8')
         time.sleep(1)
-        
+        rospy.loginfo('Frame set')
         cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/frame.jpg', frame)    
         
         self.funCrop()
@@ -59,14 +59,12 @@ class FeaturesRecognition:
         mask = self.ifMask('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/head.jpg')
 
         out= f'I really like your {pantscolor} pants and your {shirtcolor} shirt! I see youre {glasses} wearing glasses. And youre {mask} wearing a mask.'
-        print(out)
 
         return out
 
     def funCrop(self):
         img = cv2.imread('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/frame.jpg')
         results = self.personModel.predict(img)
-        print(len(results))      
 
         result = results[0]  
         am = -100 
@@ -96,7 +94,7 @@ class FeaturesRecognition:
         shirt = img[ombro:quadril,20:-20]
         pants = img[quadril:,:]
         height, width = pants.shape[:2] 
-        pants = pants[:int(height/2),20:int(width/2)]
+        pants = pants[:int(height/2),50:int(width/2)]
         head = img[:ombro,10:-10]
         head = self.zoom(head,3)
         cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/head.jpg',head)
@@ -115,40 +113,30 @@ class FeaturesRecognition:
         R = dominant_color[0]
         G = dominant_color[1]
         B = dominant_color[2]
+        print(R,G,B)
 
-        if((R>=200 and R<=255)and(G>=200 and G<=255)and(B>=200 and G<=255)):
-            cor = 'White'
-        elif(R<=40 and G<=40 and B<=40):
+        if R >= 0 and R <= 30 and G >= 0 and G <= 30 and B >= 0 and B <= 30:            
             cor = 'Black'
-        elif(R>=0 and R<=50):
-            if(G>=0 or G<=50):
-                cor = 'Blue'
-            else:
-                if (B>=0 and B<=50):
-                    cor = 'Green'
-                else: 
-                    cor = 'Cyan'
-        elif (R>=150 and R<=200):
-            cor = 'Brown'
-        elif (R>=0 and R<=150):
-            if(G>=0 and G<=100):
-                cor = 'Jeans'
-            else: 
-                if(B>=0 and B<=50):
-                    cor = 'Brown'
-                else: 
-                    cor = 'Purple'
-        elif(R>=200 and R<=255):
-            if((G>=0 and G<=50) and (B>=0 and B<=50)):
-                cor = 'Red'
-            elif(G>=100 and G<=200):
-                cor = 'Orange'
-            elif(G>=200 and G<=255):
-                if(B>=0 and B<=50):
-                    cor = 'Yellow'
-            
-                else: 
-                    cor = 'Pink'
+        elif R >= 31 and R <= 150 and G >= 31 and G <= 150 and B >= 31 and B <= 150:
+            cor = 'Gray'
+        elif R >= 151 and R <= 255 and G >= 151 and G <= 255 and B >= 151 and B <= 255:
+            cor = 'White'
+        elif R >= 200 and R <= 255 and G >= 0 and G <= 50 and B >= 0 and B <= 50:
+            cor = 'Red'
+        elif R >= 0 and R <= 50 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
+            cor = 'Green'
+        elif R >= 0 and R <= 50 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
+            cor = 'Blue'
+        elif R >= 200 and R <= 255 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
+            cor = 'Yellow'
+        elif R >= 90 and R <= 150 and G >= 0 and G <= 50 and B >= 90 and B <= 150:
+            cor = 'Pink'
+        elif R >= 200 and R <= 255 and G >= 90 and G <= 150 and B >= 0 and B <= 50:
+            cor = 'Orange'
+        elif R >= 200 and R <= 255 and G >= 121 and G <= 150 and B >= 121 and B <= 150:
+            cor = 'Pink'
+        else:
+            cor = 'Black'
         return cor
         
 
@@ -172,9 +160,9 @@ class FeaturesRecognition:
         y_max = landmarks[31][1]
         img2 = Image.open(path)
         img2 = img2.crop((x_min,y_min,x_max,y_max))
-
         img_blur = cv2.GaussianBlur(np.array(img2),(3,3), sigmaX=0, sigmaY=0)
         edges = cv2.Canny(image =img_blur, threshold1=100, threshold2=200)
+        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/test.jpg', edges)
 
         #center strip
         edges_center = edges.T[(int(len(edges.T)/2))]
@@ -197,7 +185,6 @@ class FeaturesRecognition:
 if __name__ == "__main__":
     rospy.init_node('feature_bonus', log_level=rospy.INFO)
     rospy.loginfo("Service started!")
-    time.sleep(2)
     FeaturesRecognition()
     
     try:
