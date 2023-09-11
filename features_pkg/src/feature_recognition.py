@@ -92,7 +92,7 @@ class FeaturesRecognition:
         quadril = int(result_keypoint[11][1])
         nareba = int(result_keypoint[0][0])
         shirt = img[ombro:quadril,20:-20]
-        pants = img[quadril:,:]
+        pants = img[quadril+20:,:]
         height, width = pants.shape[:2] 
         pants = pants[:int(height/2),50:int(width/2)]
         head = img[:ombro,10:-10]
@@ -115,17 +115,12 @@ class FeaturesRecognition:
         B = dominant_color[2]
         print(R,G,B)
 
-        if R >= 0 and R <= 30 and G >= 0 and G <= 30 and B >= 0 and B <= 30:            
-            cor = 'Black'
-        elif R >= 31 and R <= 150 and G >= 31 and G <= 150 and B >= 31 and B <= 150:
-            cor = 'Gray'
-        elif R >= 151 and R <= 255 and G >= 151 and G <= 255 and B >= 151 and B <= 255:
-            cor = 'White'
-        elif R >= 200 and R <= 255 and G >= 0 and G <= 50 and B >= 0 and B <= 50:
+
+        if R >= 100 and R <= 255 and G >= 0 and G <= 80 and B >= 0 and B <= 80:
             cor = 'Red'
-        elif R >= 0 and R <= 50 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
+        elif R >= 0 and R <= 80 and G >= 100 and G <= 255 and B >= 0 and B <= 80:
             cor = 'Green'
-        elif R >= 0 and R <= 50 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
+        elif R >= 0 and R <= 80 and G >= 0 and G <= 80 and B >= 100 and B <= 255:
             cor = 'Blue'
         elif R >= 200 and R <= 255 and G >= 200 and G <= 255 and B >= 0 and B <= 50:
             cor = 'Yellow'
@@ -135,6 +130,10 @@ class FeaturesRecognition:
             cor = 'Orange'
         elif R >= 200 and R <= 255 and G >= 121 and G <= 150 and B >= 121 and B <= 150:
             cor = 'Pink'
+        elif R >= 31 and R <= 150 and G >= 31 and G <= 150 and B >= 31 and B <= 150:
+            cor = 'Gray'
+        elif R >= 151 and R <= 255 and G >= 151 and G <= 255 and B >= 151 and B <= 255:
+            cor = 'White'
         else:
             cor = 'Black'
         return cor
@@ -162,7 +161,7 @@ class FeaturesRecognition:
         img2 = img2.crop((x_min,y_min,x_max,y_max))
         img_blur = cv2.GaussianBlur(np.array(img2),(3,3), sigmaX=0, sigmaY=0)
         edges = cv2.Canny(image =img_blur, threshold1=100, threshold2=200)
-        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/test.jpg', edges)
+        #cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/test.jpg', edges)
 
         #center strip
         edges_center = edges.T[(int(len(edges.T)/2))]
