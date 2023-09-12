@@ -12,11 +12,15 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image as imgmsg
 from features_pkg.srv import Features
 
+
+#PATH = '/home/robofei/Workspace/catkin_ws/src/3rd_party/vision_system/Feature_extraction/features_pkg/src'
+PATH = '/home/bibo/catkin_fodase/Feature_extraction/features_pkg/src'
+
 class FeaturesRecognition:
 
     def __init__(self):
-        self.personModel = YOLO("yolov8m.pt")
-        self.keypointsModel = YOLO('yolov8n-pose.pt')
+        self.personModel = YOLO(PATH + "/dep/yolov8m.pt")
+        self.keypointsModel = YOLO(PATH + '/dep/yolov8n-pose.pt')
         rf = Roboflow(api_key="NSkF2YE2ufLzrNUiswiA")
         project = rf.workspace().project("mask-detection-m3skq")
         self.maskModel = project.version(1).model
@@ -50,20 +54,20 @@ class FeaturesRecognition:
         frame = self.bridge.imgmsg_to_cv2(self.cam_image,desired_encoding='bgr8')
         time.sleep(1)
         rospy.loginfo('Frame set')
-        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/frame.jpg', frame)    
+        cv2.imwrite(PATH + '/data/frame.jpg', frame)    
         
         self.funCrop()
-        pantscolor = self.funColor('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/pants.jpg')
-        shirtcolor = self.funColor('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/shirt.jpg')
-        glasses = self.ifGlasses('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/head.jpg')
-        mask = self.ifMask('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/head.jpg')
+        pantscolor = self.funColor(PATH + '/data/pants.jpg')
+        shirtcolor = self.funColor(PATH + '/data/shirt.jpg')
+        glasses = self.ifGlasses(PATH + '/data/head.jpg')
+        mask = self.ifMask(PATH + '/data/head.jpg')
 
         out= f'I really like your {pantscolor} pants and your {shirtcolor} shirt! I see youre {glasses} wearing glasses. And youre {mask} wearing a mask.'
 
         return out
 
     def funCrop(self):
-        img = cv2.imread('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/frame.jpg')
+        img = cv2.imread(PATH + '/data/frame.jpg')
         results = self.personModel.predict(img)
 
         result = results[0]  
@@ -97,9 +101,9 @@ class FeaturesRecognition:
         pants = pants[:int(height/2),50:int(width/2)]
         head = img[:ombro,10:-10]
         head = self.zoom(head,3)
-        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/head.jpg',head)
-        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/pants.jpg',pants)
-        cv2.imwrite('/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src/data/shirt.jpg',shirt)
+        cv2.imwrite(PATH +'/data/head.jpg',head)
+        cv2.imwrite(PATH +'/data/pants.jpg',pants)
+        cv2.imwrite(PATH +'/data/shirt.jpg',shirt)
         '''
         cv2.circle(img,(nareba,ombro),2,(255,0,0),5)
         cv2.circle(img,(nareba,quadril),2,(0,255,0),5)
@@ -141,7 +145,7 @@ class FeaturesRecognition:
 
     def ifGlasses(self,path):
         detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+        predictor = dlib.shape_predictor(PATH +'/dep/shape_predictor_68_face_landmarks.dat')
         img = dlib.load_rgb_image(path)
         rect = detector(img)[0]
         sp = predictor(img, rect)
