@@ -1,27 +1,4 @@
-#!/usr/bin/python
-from ultralytics import YOLO
-import cv2  
-import time
-from colorthief import ColorThief
-import dlib
-import numpy as np
-from PIL import Image
-from roboflow import Roboflow
-import rospy
-from cv_bridge import CvBridge
-from sensor_msgs.msg import Image as imgmsg
-from features_pkg.srv import Features
-
-
-PATH = '/home/robofei/Workspace/catkin_ws/src/3rd_party/vision_system/Feature_extraction/features_pkg/src'
-#PATH = '/home/bibo/catkin_fodase/Feature_extraction/features_pkg/src'
-
-class FeaturesRecognition:
-
-    def __init__(self):
-        self.personModel = YOLO(PATH + "/dep/yolov8m.pt")
-        self.keypointsModel = YOLO(PATH + '/dep/yolov8n-pose.pt')
-        rf = Roboflow(api_key="#!/usr/bin/python3
+#!/usr/bin/python3
 from ultralytics import YOLO
 import cv2  
 import time
