@@ -113,8 +113,17 @@ class FeaturesRecognition:
         cv2.imwrite(PATH +'/data/pants.jpg',pants)
         cv2.imwrite(PATH +'/data/shirt.jpg',shirt)
 
+    def saturation(self,path):
+        image = cv2.imread(path)
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        saturation_scale = 2.5
+        hsv_image[:, :, 1] = np.clip(hsv_image[:, :, 1] * saturation_scale, 0, 255).astype(np.uint8)
+        img = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+        cv2.imwrite(path, img)
+         
 
     def funColor(self,path):
+        self.saturation(path)
         color_thief = ColorThief(path)
         dominant_color = color_thief.get_color()
         R = dominant_color[0]
