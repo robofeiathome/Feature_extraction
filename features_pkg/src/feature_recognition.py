@@ -112,7 +112,7 @@ class FeaturesRecognition:
             return "Cor inválida"                
 
 
-    def funColor(self,path):
+    def find_color(self,path):
         color_thief = ColorThief(path)
         dominant_color = color_thief.get_color()
         print(dominant_color)
@@ -121,9 +121,9 @@ class FeaturesRecognition:
         cor = self.rgb_to_color_name(dominant_color)
 
         return cor
-        
 
-    def ifGlasses(self,path):
+
+    def if_glasses(self,path):
         img = cv2.imread(path)
         results = self.glassesModel.predict(img, stream=True)     
         for result in results:                                        
@@ -137,7 +137,7 @@ class FeaturesRecognition:
                 return ' not '
 
 
-    def ifMask(self,path):
+    def if_mask(self,path):
         img = cv2.imread(path)
         results = self.maskModel.predict(img, stream=True)                
         for result in results:                                        
@@ -148,7 +148,7 @@ class FeaturesRecognition:
                 return ' not '
 
        
-    def funCrop(self):
+    def crop_image(self):
         result = None
         while result is None:
             frame = self.bridge.imgmsg_to_cv2(self.cam_image,desired_encoding='bgr8')
@@ -171,14 +171,14 @@ class FeaturesRecognition:
         crop = frame[int(xyxy[1]):int(xyxy[3]),int(xyxy[0]):int(xyxy[2])]     
         cv2.imwrite(PATH + '/data/crop.jpg', crop)    
   
-        self.funKeypoints(crop)
+        self.find_keypoints(crop)
 
 
     def zoom(self,img, zoom_factor=2):
         return cv2.resize(img, None, fx=zoom_factor, fy=zoom_factor)
 
 
-    def funKeypoints(self,img):
+    def find_keypoints(self,img):
         results = self.keypointsModel(img) 
         result = results[0]
         result_keypoint = result.keypoints.xy.cpu().numpy()[0]
@@ -199,11 +199,11 @@ class FeaturesRecognition:
 
     def features(self):
 
-        self.funCrop()
-        pantscolor = self.funColor(PATH + '/data/pants.jpg')
-        shirtcolor = self.funColor(PATH + '/data/shirt.jpg')
-        glasses = self.ifGlasses(PATH + '/data/head.jpg')
-        mask = self.ifMask(PATH + '/data/head.jpg')
+        self.crop_image()
+        pantscolor = self.find_color(PATH + '/data/pants.jpg')
+        shirtcolor = self.find_color(PATH + '/data/shirt.jpg')
+        glasses = self.if_glasses(PATH + '/data/head.jpg')
+        mask = self.if_mask(PATH + '/data/head.jpg')
 
         out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask.'
 
