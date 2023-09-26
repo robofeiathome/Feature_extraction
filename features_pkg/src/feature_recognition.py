@@ -14,16 +14,11 @@ from features_pkg.srv import Features
 import webcolors
 from collections import namedtuple
 import sys
+from hera_objects.msg import *
+from hera_objects.srv import FindObject, FindSpecificObject
 
-DEVICE = 'Bibo' #'Hera'
-
-if DEVICE == 'Hera':
-    PATH = '/home/robofei/Workspace/catkin_ws/src/3rd_party/vision_system/Feature_extraction/features_pkg/src'
-    TOPIC = '/camera/rgb/image_raw'
-else:
-    PATH = '/home/bibo/catkin_fodase/src/Feature_extraction/features_pkg/src'
-    TOPIC = '/usb_cam/image_raw' 
-
+PATH = '/home/robofei/Workspace/catkin_ws/src/3rd_party/vision_system/Feature_extraction/features_pkg/src'
+TOPIC = '/usb_cam/image_raw'
 NAMED_COLORS = {
     'red': (255, 0, 0),
     'green': (0, 128, 0),
@@ -71,6 +66,8 @@ class FeaturesRecognition:
         self.img_sub = rospy.Subscriber(self.topic,imgmsg,self.camera_callback)
         time.sleep(0.5)
         rospy.Service('features', Features, self.handler)
+        self.objects = rospy.ServiceProxy('/objects', FindObject)
+        self.pixel_height = 0
 
 
     def camera_callback(self,data):
@@ -132,7 +129,7 @@ class FeaturesRecognition:
 
             try:
                 box = boxes.cls[0]
-                return ' '                
+                return ' indeed '                
             except:
                 return ' not '
 
@@ -143,7 +140,7 @@ class FeaturesRecognition:
         for result in results:                                        
             boxes = result.boxes.cpu().numpy()  
             if boxes.cls[0] != 0:
-                return ' '                
+                return ' indeed '                
             else:
                 return ' not '
 
@@ -168,8 +165,13 @@ class FeaturesRecognition:
         rospy.loginfo('Frame set')
         cv2.imwrite(PATH + '/data/frame.jpg', frame)    
 
-        crop = frame[int(xyxy[1]):int(xyxy[3]),int(xyxy[0]):int(xyxy[2])]     
-        cv2.imwrite(PATH + '/data/crop.jpg', crop)    
+        print("0:", xyxy[0])
+        print("1:", xyxy[1])
+        print("2:", xyxy[2])
+        print("3:", xyxy[3])
+        self.pixel_height = xyxy[1]
+        crop = frame[int(xyxy[1]):int(xyxy[3]),int(xyxy[0]):int(xyxy[2])]
+        cv2.imwrite(PATH + '/data/crop.jpg', crop)
   
         self.find_keypoints(crop)
 
@@ -197,6 +199,32 @@ class FeaturesRecognition:
         cv2.imwrite(PATH +'/data/shirt.jpg',shirt)
         self.saturation(PATH + '/data/shirt.jpg')
 
+    def find_closest_object(self):
+        resp = self.objects("closest")
+        coordinates = resp.position
+        taken_object = resp.taken_object
+        values = [coordinates[0].x, coordinates[0].y, coordinates[0].z]
+        if all(v == 0.0 for v in values):
+            return None, None
+        else:
+            return taken_object[0], coordinates[0]
+
+    def height_estimate(self, height):
+        obj_class, coords = self.find_closest_object()
+        print(obj_class)
+        distance = coords.x
+
+        height = 1080 - height
+        distance = (distance*100)+20
+        camera_image_height = 1.48 * distance
+        if height < 540:
+            subject_height = 540 - height
+            hf = 1.22 - (((subject_height*camera_image_height)/1080)/100)
+        else:
+            subject_height = height - 540
+            hf = (((subject_height*camera_image_height)/1080)/100) + 1.22
+        return hf
+
     def features(self):
 
         self.crop_image()
@@ -204,13 +232,14 @@ class FeaturesRecognition:
         shirtcolor = self.find_color(PATH + '/data/shirt.jpg')
         glasses = self.if_glasses(PATH + '/data/head.jpg')
         mask = self.if_mask(PATH + '/data/head.jpg')
+        hf = self.height_estimate(self.pixel_height)
 
-        out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask.'
+        out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask. You are between {hf - 0.02} and {hf + 0.02} meters tall. '
 
         return out
 
 
-    def handler(self, request):
+    def handler(self):
             self.recog = 0
             rospy.loginfo("Service called!")
             rospy.loginfo("Requested..")
