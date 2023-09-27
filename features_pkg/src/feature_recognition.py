@@ -234,7 +234,7 @@ class FeaturesRecognition:
         mask = self.if_mask(PATH + '/data/head.jpg')
         hf = self.height_estimate(self.pixel_height)
 
-        out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask. You are between {hf - 0.02} and {hf + 0.02} meters tall. '
+        out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask. You are between {(hf - 0.02):.2f} and {(hf + 0.02):.2f} meters tall. '
 
         return out
 
