@@ -200,7 +200,7 @@ class FeaturesRecognition:
         self.saturation(PATH + '/data/shirt.jpg')
 
     def find_closest_object(self):
-        resp = self.objects("closest")
+        resp = self.objects("closest", "")
         coordinates = resp.position
         taken_object = resp.taken_object
         values = [coordinates[0].x, coordinates[0].y, coordinates[0].z]
@@ -239,7 +239,7 @@ class FeaturesRecognition:
         return out
 
 
-    def handler(self):
+    def handler(self, request):
             self.recog = 0
             rospy.loginfo("Service called!")
             rospy.loginfo("Requested..")
