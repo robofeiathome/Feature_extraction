@@ -56,10 +56,6 @@ NAMED_COLORS = {
 class FeaturesRecognition:
 
     def __init__(self):
-        self.personModel = YOLO(PATH + "/dep/yolov8m.pt")
-        self.keypointsModel = YOLO(PATH + '/dep/yolov8n-pose.pt')
-        self.maskModel = YOLO(PATH + '/dep/mask.pt')
-        self.glassesModel = YOLO(PATH + '/dep/glasses.pt')
         self.bridge = CvBridge()
         self.topic = TOPIC
         self.rate = rospy.Rate(5)
@@ -122,7 +118,8 @@ class FeaturesRecognition:
 
     def if_glasses(self,path):
         img = cv2.imread(path)
-        results = self.glassesModel.predict(img, stream=True)     
+        glassesModel = YOLO(PATH + '/dep/glasses.pt')
+        results = glassesModel.predict(img, stream=True)     
         for result in results:                                        
             boxes = result.boxes.cpu().numpy()  
             print('box:',boxes.cls)
@@ -136,7 +133,8 @@ class FeaturesRecognition:
 
     def if_mask(self,path):
         img = cv2.imread(path)
-        results = self.maskModel.predict(img, stream=True)                
+        maskModel = YOLO(PATH + '/dep/mask.pt')
+        results = maskModel.predict(img, stream=True)                
         for result in results:                                        
             boxes = result.boxes.cpu().numpy()  
             if boxes.cls[0] != 0:
@@ -146,21 +144,17 @@ class FeaturesRecognition:
 
        
     def crop_image(self):
-        result = None
-        while result is None:
-            frame = self.bridge.imgmsg_to_cv2(self.cam_image,desired_encoding='bgr8')
-            rospy.logwarn('Person not found... Trying again')
-            results = self.personModel.predict(frame)[0]
-            am = -100 
-            for i, box in enumerate(results.boxes):
-                if box.cls.item() == 0:
-                    cords = box.xyxy[0].tolist()
-                    area = (cords[2] - cords[0]) * (cords[3] - cords[1])
-                    if area > am:
-                        am = area
-                        xyxy = cords
-            if 'xyxy' in locals():
-                result = results[0]
+        personModel = YOLO(PATH + "/dep/yolov8n.pt")
+        frame = self.bridge.imgmsg_to_cv2(self.cam_image,desired_encoding='bgr8')
+        results = personModel.predict(frame)[0]
+        am = -100 
+        for i, box in enumerate(results.boxes):
+            if box.cls.item() == 0:
+                cords = box.xyxy[0].tolist()
+                area = (cords[2] - cords[0]) * (cords[3] - cords[1])
+                if area > am:
+                    am = area
+                    xyxy = cords
 
         rospy.loginfo('Frame set')
         cv2.imwrite(PATH + '/data/frame.jpg', frame)    
@@ -181,7 +175,8 @@ class FeaturesRecognition:
 
 
     def find_keypoints(self,img):
-        results = self.keypointsModel(img) 
+        keypointsModel = YOLO(PATH + '/dep/yolov8n-pose.pt')
+        results = keypointsModel(img)
         result = results[0]
         result_keypoint = result.keypoints.xy.cpu().numpy()[0]
         ombro = int(result_keypoint[5][1])
@@ -200,7 +195,7 @@ class FeaturesRecognition:
         self.saturation(PATH + '/data/shirt.jpg')
 
     def find_closest_object(self):
-        resp = self.objects("closest", "")
+        resp = self.objects("closest", "", 0, 0)
         coordinates = resp.position
         taken_object = resp.taken_object
         values = [coordinates[0].x, coordinates[0].y, coordinates[0].z]
@@ -213,10 +208,12 @@ class FeaturesRecognition:
         obj_class, coords = self.find_closest_object()
         print(obj_class)
         distance = coords.x
+        print(distance)
+
 
         height = 1080 - height
         distance = (distance*100)+20
-        camera_image_height = 1.48 * distance
+        camera_image_height = 1.09 * distance
         if height < 540:
             subject_height = 540 - height
             hf = 1.22 - (((subject_height*camera_image_height)/1080)/100)
@@ -234,7 +231,7 @@ class FeaturesRecognition:
         mask = self.if_mask(PATH + '/data/head.jpg')
         hf = self.height_estimate(self.pixel_height)
 
-        out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask. You are between {hf - 0.02} and {hf + 0.02} meters tall. '
+        out= f'They are wearing {pantscolor} pants and {shirtcolor} top. They are{glasses}wearing glasses and are{mask}wearing a mask. They are between {(hf - 0.02):.2f} and {(hf + 0.02):.2f} meters tall. '
 
         return out
 
