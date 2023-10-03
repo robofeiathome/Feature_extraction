@@ -13,6 +13,7 @@ from sensor_msgs.msg import Image as imgmsg
 from features_pkg.srv import Features
 import webcolors
 from collections import namedtuple
+import datetime
 import sys
 from hera_objects.msg import *
 from hera_objects.srv import FindObject, FindSpecificObject
@@ -235,6 +236,11 @@ class FeaturesRecognition:
         hf = self.height_estimate(self.pixel_height)
 
         out= f'I really like your {pantscolor} pants and your {shirtcolor} top! I see youre{glasses}wearing glasses. And youre{mask}wearing a mask. You are between {(hf - 0.02):.2f} and {(hf + 0.02):.2f} meters tall. '
+
+        current_time = datetime.datetime.now()
+
+        with open(f"features log {current_time}.txt", "a") as myfile:
+            myfile.write(out + "\n")
 
         return out
 
